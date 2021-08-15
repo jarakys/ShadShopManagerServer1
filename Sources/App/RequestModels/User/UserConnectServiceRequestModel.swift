@@ -12,4 +12,6 @@ struct UserConnectServiceRequestModel: Content {
         case instagram
     }
     var service: Service
+    var token: String
+    var accountName: String
 }

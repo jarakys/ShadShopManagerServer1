@@ -12,7 +12,7 @@ final class DatabaseManager {
     
     static func createUser(user: UserCreateRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<UsersDb> {
         let promise = eventLoop.makePromise(of: UsersDb.self)
-        let userDb = UsersDb(id: nil, login: user.login, password: user.password, services: [])
+        let userDb = UsersDb(id: nil, login: user.login, password: user.password, connectedServices: [])
         userDb.create(on: database).whenComplete({ result in
             if case .failure = result {
                 promise.fail(Abort(.badRequest, reason: "User already exist"))

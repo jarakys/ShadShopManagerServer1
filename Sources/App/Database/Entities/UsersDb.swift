@@ -8,7 +8,6 @@
 import Vapor
 import Fluent
 
-
 final class UsersDb: Model {
     static let schema = "users"
     
@@ -19,15 +18,15 @@ final class UsersDb: Model {
     var login: String
     @Field(key: "password")
     var password: String
-    @Field(key: "services")
-    var services: [String]
+    @Children(for: \.$userDb)
+    var connectedServices: [ConnectedServicesDb]
     
     init() { }
     
-    init(id: UUID? = nil, login: String, password: String, services: [String]) {
+    init(id: UUID? = nil, login: String, password: String, connectedServices: [ConnectedServicesDb]) {
         self.id = id
         self.login = login
         self.password = password
-        self.services = services
+        self.connectedServices = connectedServices
     }
 }
