@@ -11,7 +11,7 @@ import JWT
 class JWTManager {
     static func getJWTToken(user: UsersDb, on request: Request) -> String? {
         let payload = UserPayload(
-            subject: SubjectClaim(value: user.login),
+            subject: SubjectClaim(value: user.id?.uuidString ?? ""),
             expiration: .init(value: .distantFuture),
             isPremium: true
         )

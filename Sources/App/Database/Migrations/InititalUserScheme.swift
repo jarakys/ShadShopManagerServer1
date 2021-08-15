@@ -14,7 +14,7 @@ struct InititalUserScheme: Migration {
             .id()
             .field("login", .string, .required)
             .field("password", .string, .required)
-            .field("connected_instagram", .bool)
+            .field("services", .array(of: .string))
             .unique(on: "login")
             .create()
     }

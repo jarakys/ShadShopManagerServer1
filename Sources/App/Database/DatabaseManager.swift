@@ -12,7 +12,7 @@ final class DatabaseManager {
     
     static func createUser(user: UserCreateRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<UsersDb> {
         let promise = eventLoop.makePromise(of: UsersDb.self)
-        let userDb = UsersDb(id: nil, login: user.login, password: user.password, connectedInstagram: false)
+        let userDb = UsersDb(id: nil, login: user.login, password: user.password, services: [])
         userDb.create(on: database).whenComplete({ result in
             if case .failure = result {
                 promise.fail(Abort(.badRequest, reason: "User already exist"))
@@ -28,5 +28,9 @@ final class DatabaseManager {
             group.filter(\.$login == user.login).filter(\.$password == user.password)
         }.first().unwrap(or: Abort(.notFound))
         return userDb
+    }
+    
+    static func getUser(by id: String, on database: Database) -> EventLoopFuture<UsersDb> {
+        UsersDb.find(UUID(id), on: database).unwrap(or: Abort(.notFound))
     }
 }

@@ -7,15 +7,9 @@
 
 import Vapor
 
-enum Service: String, Codable {
-    case insta
-    case rozetka
-    case wooCommerce
-    case promUa
-    case none
-}
-
 struct UserConnectServiceRequestModel: Content {
+    enum Service: String, Codable {
+        case instagram
+    }
     var service: Service
 }
-

@@ -7,8 +7,14 @@
 
 import Vapor
 
+enum Service: String, Codable {
+    case instagram
+    case rozetka
+}
+
 struct UserResponseModel: BaseResponseModel {
+    var id: String
     var token: String
     var login: String
-    var connectedService: Service
+    var connectedServices: [Service]
 }
