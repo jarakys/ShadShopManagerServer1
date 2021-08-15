@@ -17,15 +17,16 @@ struct AuthController: RouteCollection {
     func login(req: Request) throws -> EventLoopFuture<UserResponseModel> {
         let loginModelRequest = try req.content.decode(UserLoginRequestModel.self)
         return DatabaseManager.loginUser(user: loginModelRequest, on: req.db).map({ user in
-            return UserResponseModel(token: "123456789", login: user.login, connectedService: .none)
+            let jwt = JWTManager.getJWTToken(user: user, on: req) ?? ""
+            return UserResponseModel(token: jwt, login: user.login, connectedService: .none)
         })
     }
     
     func register(req: Request) throws -> EventLoopFuture<UserResponseModel> {
         let registerModelRequest = try req.content.decode(UserCreateRequestModel.self)
-        
         return DatabaseManager.createUser(user: registerModelRequest, on: req.db, in: req.eventLoop).map({ user in
-            return UserResponseModel(token: "123456789", login: "dimas@pidoras.com", connectedService: .none)
+            let jwt = JWTManager.getJWTToken(user: user, on: req) ?? ""
+            return UserResponseModel(token: jwt, login: user.login, connectedService: .none)
         })
     }
 }

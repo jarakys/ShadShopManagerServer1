@@ -12,6 +12,7 @@ public func configure(_ app: Application) throws {
     try app.register(collection: AuthController())
     app.migrations.add(InititalUserScheme())
     app.logger.logLevel = .debug
+    app.jwt.signers.use(.hs256(key: "O484ZLGkf9vrNbNXTFI6GSHapULJOdF9"))
     try app.autoMigrate().wait()
     try routes(app)
 }

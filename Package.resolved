@@ -56,6 +56,24 @@
         }
       },
       {
+        "package": "jwt",
+        "repositoryURL": "https://github.com/vapor/jwt.git",
+        "state": {
+          "branch": null,
+          "revision": "46eddb526fa70fd9d765a3bdffac73b2be487cfc",
+          "version": "4.0.0"
+        }
+      },
+      {
+        "package": "jwt-kit",
+        "repositoryURL": "https://github.com/vapor/jwt-kit.git",
+        "state": {
+          "branch": null,
+          "revision": "df7955305940ea0fcd1626a0a6d1a1556623f95e",
+          "version": "4.2.3"
+        }
+      },
+      {
         "package": "multipart-kit",
         "repositoryURL": "https://github.com/vapor/multipart-kit.git",
         "state": {
