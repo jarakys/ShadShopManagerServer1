@@ -55,4 +55,28 @@ final class DatabaseManager {
         })
         return promise.futureResult
     }
+    
+    static func updateService(to userId: String, serivce: UserConnectServiceRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<Bool> {
+        let promise = eventLoop.makePromise(of: Bool.self)
+        getUser(by: userId, on: database).whenComplete({ result in
+            if case let .success(user) = result {
+                if let connectedService = user.$connectedServices.value?.first(where: { connectedService in
+                    connectedService.service.rawValue == serivce.service.rawValue
+                }) {
+                    connectedService.accountName = serivce.accountName
+                    connectedService.token = serivce.token
+                    connectedService.save(on: database).whenComplete({ result in
+                        if case .failure = result {
+                            promise.fail(Abort(.badRequest, reason: "Error with save service"))
+                        } else {
+                            promise.succeed(true)
+                        }
+                        return
+                    })
+                    promise.fail(Abort(.badRequest, reason: "Service already connected"))
+                }
+            }
+        })
+        return promise.futureResult
+    }
 }
