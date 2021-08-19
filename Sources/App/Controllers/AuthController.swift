@@ -34,12 +34,12 @@ struct AuthController: RouteCollection {
     func connectService(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let payload = try req.jwt.verify(as: UserPayload.self)
         let connectServiceModelRequest = try req.content.decode(UserConnectServiceRequestModel.self)
-        return DatabaseManager.getUser(by: payload.subject.value, on: req.db).map({ user in
-//            if !user.services.contains(connectServiceModelRequest.service.rawValue) {
-//                user.services.append(connectServiceModelRequest.service.rawValue)
-//            }
-            user.save(on: req.db)
-            return HTTPStatus.ok
+        
+        return DatabaseManager.connectService(to: payload.subject.value, serivce: connectServiceModelRequest, on: req.db, in: req.eventLoop).map({ result in
+            if result {
+                return .ok
+            }
+            return .badRequest
         })
     }
 }

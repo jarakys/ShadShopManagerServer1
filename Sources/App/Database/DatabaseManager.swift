@@ -9,7 +9,6 @@ import Vapor
 import Fluent
 
 final class DatabaseManager {
-    
     static func createUser(user: UserCreateRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<UsersDb> {
         let promise = eventLoop.makePromise(of: UsersDb.self)
         let userDb = UsersDb(id: nil, login: user.login, password: user.password, connectedServices: [])
@@ -32,5 +31,28 @@ final class DatabaseManager {
     
     static func getUser(by id: String, on database: Database) -> EventLoopFuture<UsersDb> {
         UsersDb.find(UUID(id), on: database).unwrap(or: Abort(.notFound))
+    }
+    
+    static func connectService(to userId: String, serivce: UserConnectServiceRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<Bool> {
+        let promise = eventLoop.makePromise(of: Bool.self)
+        getUser(by: userId, on: database).whenComplete({ result in
+            if case let .success(user) = result {
+                if user.$connectedServices.value?.contains(where: { connectedService in
+                    connectedService.service.rawValue == serivce.service.rawValue
+                }) == false {
+                    user.connectedServices.append(ConnectedServicesDb(token: serivce.token, accountName: serivce.accountName, service: serivce.service))
+                    user.save(on: database).whenComplete({ result in
+                        if case .failure = result {
+                            promise.fail(Abort(.badRequest, reason: "Error with save service"))
+                        } else {
+                            promise.succeed(true)
+                        }
+                        return
+                    })
+                    promise.fail(Abort(.badRequest, reason: "Service already connected"))
+                }
+            }
+        })
+        return promise.futureResult
     }
 }
