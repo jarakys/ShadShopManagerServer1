@@ -22,13 +22,17 @@ final class ConnectedServicesDb: Model {
     var service: Service
     @Parent(key: "user_id")
     var userDb: UsersDb
+    @Field(key: "user_id_field")
+    var userId: UUID
     
     init() { }
     
-    init(id: UUID? = nil, token: String, accountName: String, service: Service) {
+    init(id: UUID? = nil, userId: UUID, token: String, accountName: String, service: Service) {
         self.id = id
         self.token = token
         self.accountName = accountName
         self.service = service
+        self.$userDb.id = userId
+        self.userId = userId
     }
 }

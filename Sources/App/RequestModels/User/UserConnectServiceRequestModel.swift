@@ -12,3 +12,11 @@ struct UserConnectServiceRequestModel: Content {
     var token: String
     var accountName: String
 }
+
+struct UserUpdateServiceRequestModel: Content {
+    var service: Service
+    var token: String
+    var accountName: String
+    var id: String
+}
+

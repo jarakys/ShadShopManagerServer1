@@ -16,9 +16,11 @@ struct AuthController: RouteCollection {
     
     func login(req: Request) throws -> EventLoopFuture<UserResponseModel> {
         let loginModelRequest = try req.content.decode(UserLoginRequestModel.self)
-        return DatabaseManager.loginUser(user: loginModelRequest, on: req.db).map({ user in
+        return DatabaseManager.loginUser(user: loginModelRequest, on: req.db, in: req.eventLoop).map({ user in
             let jwt = JWTManager.getJWTToken(user: user, on: req) ?? ""
-            return UserResponseModel(id: user.id?.uuidString ?? "", token: jwt, login: user.login, connectedServices: [])
+            return UserResponseModel(id: user.id?.uuidString ?? "", token: jwt, login: user.login, connectedServices: user.connectedServices.map({ service in
+                ConnectedServiceResponse(id: service.id?.uuidString, token: service.token, accountName: service.accountName)
+            }))
         })
     }
     

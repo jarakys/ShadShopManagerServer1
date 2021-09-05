@@ -18,7 +18,7 @@ struct ServiceController: RouteCollection {
         let payload = try req.jwt.verify(as: UserPayload.self)
         let connectServiceModelRequest = try req.content.decode(UserConnectServiceRequestModel.self)
         
-        return DatabaseManager.connectService(to: payload.subject.value, serivce: connectServiceModelRequest, on: req.db, in: req.eventLoop).map({ result in
+        return DatabaseManager.connectService(to: payload.subject.value, service: connectServiceModelRequest, on: req.db, in: req.eventLoop).map({ result in
             if result {
                 return .ok
             }
@@ -28,8 +28,8 @@ struct ServiceController: RouteCollection {
     
     func updateService(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let payload = try req.jwt.verify(as: UserPayload.self)
-        let connectServiceModelRequest = try req.content.decode(UserConnectServiceRequestModel.self)
-        return DatabaseManager.updateService(to: payload.subject.value, serivce: connectServiceModelRequest, on: req.db, in: req.eventLoop).map({ result in
+        let connectServiceModelRequest = try req.content.decode(UserUpdateServiceRequestModel.self)
+        return DatabaseManager.updateService(to: payload.subject.value, service: connectServiceModelRequest, on: req.db, in: req.eventLoop).map({ result in
             if result {
                 return .ok
             }

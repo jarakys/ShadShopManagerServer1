@@ -16,5 +16,5 @@ struct UserResponseModel: BaseResponseModel {
     var id: String
     var token: String
     var login: String
-    var connectedServices: [Service]
+    var connectedServices: [ConnectedServiceResponse]
 }

@@ -23,10 +23,9 @@ final class UsersDb: Model {
     
     init() { }
     
-    init(id: UUID? = nil, login: String, password: String, connectedServices: [ConnectedServicesDb]) {
+    init(id: UUID? = nil, login: String, password: String) {
         self.id = id
         self.login = login
         self.password = password
-        self.connectedServices = connectedServices
     }
 }

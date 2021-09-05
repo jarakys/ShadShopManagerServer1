@@ -10,6 +10,8 @@ public func configure(_ app: Application) throws {
     // register routes
     app.databases.use(.sqlite(.file("Data.sqlite")), as: .sqlite)
     try app.register(collection: AuthController())
+    try app.register(collection: DataController())
+    try app.register(collection: ServiceController())
     app.migrations.add(InititalUserScheme())
     app.migrations.add(InitialInstagramData())
     app.migrations.add(InitialGoodsInfoData())

@@ -11,7 +11,7 @@ import Fluent
 final class DatabaseManager {
     static func createUser(user: UserCreateRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<UsersDb> {
         let promise = eventLoop.makePromise(of: UsersDb.self)
-        let userDb = UsersDb(id: nil, login: user.login, password: user.password, connectedServices: [])
+        let userDb = UsersDb(id: nil, login: user.login, password: user.password)
         userDb.create(on: database).whenComplete({ result in
             if case .failure = result {
                 promise.fail(Abort(.badRequest, reason: "User already exist"))
@@ -22,26 +22,38 @@ final class DatabaseManager {
         return promise.futureResult
     }
     
-    static func loginUser(user: UserLoginRequestModel, on database: Database) -> EventLoopFuture<UsersDb> {
+    static func loginUser(user: UserLoginRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<UsersDb> {
+        let promise = eventLoop.makePromise(of: UsersDb.self)
         let userDb = UsersDb.query(on: database).group(.and) { group in
             group.filter(\.$login == user.login).filter(\.$password == user.password)
-        }.first().unwrap(or: Abort(.notFound))
-        return userDb
+        }.first().whenComplete({ result in
+            if case let .success(.some(user)) = result {
+                user.$connectedServices.load(on: database).whenComplete({ loadResult in
+                    if case .failure = loadResult {
+                        promise.fail(Abort(.internalServerError, reason: "Cannot load connectedServices"))
+                        return
+                    }
+                    promise.succeed(user)
+                })
+            } else {
+                promise.fail(Abort(.badRequest, reason: "User not found"))
+            }
+        })
+        return promise.futureResult
     }
     
     static func getUser(by id: String, on database: Database) -> EventLoopFuture<UsersDb> {
         UsersDb.find(UUID(id), on: database).unwrap(or: Abort(.notFound))
     }
     
-    static func connectService(to userId: String, serivce: UserConnectServiceRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<Bool> {
+    static func connectService(to userId: String, service: UserConnectServiceRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<Bool> {
         let promise = eventLoop.makePromise(of: Bool.self)
-        getUser(by: userId, on: database).whenComplete({ result in
-            if case let .success(user) = result {
-                if user.$connectedServices.value?.contains(where: { connectedService in
-                    connectedService.service.rawValue == serivce.service.rawValue
-                }) == false {
-                    user.connectedServices.append(ConnectedServicesDb(token: serivce.token, accountName: serivce.accountName, service: serivce.service))
-                    user.save(on: database).whenComplete({ result in
+        
+        getServices(userId: userId, on: database, in: eventLoop).whenComplete({ result in
+            if case let .success(connectedServices) = result {
+                if !connectedServices.contains(where: { $0.service.rawValue == service.service.rawValue }) {
+                    let serviceDb = ConnectedServicesDb(userId: UUID(userId) ?? UUID(), token: service.token, accountName: service.accountName, service: service.service)
+                    serviceDb.save(on: database).whenComplete({result in
                         if case .failure = result {
                             promise.fail(Abort(.badRequest, reason: "Error with save service"))
                         } else {
@@ -49,34 +61,45 @@ final class DatabaseManager {
                         }
                         return
                     })
+                } else {
                     promise.fail(Abort(.badRequest, reason: "Service already connected"))
                 }
+            } else {
+                promise.fail(Abort(.badRequest, reason: "Error with save service"))
             }
         })
         return promise.futureResult
     }
     
-    static func updateService(to userId: String, serivce: UserConnectServiceRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<Bool> {
+    static func updateService(to userId: String, service: UserUpdateServiceRequestModel, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<Bool> {
         let promise = eventLoop.makePromise(of: Bool.self)
-        getUser(by: userId, on: database).whenComplete({ result in
-            if case let .success(user) = result {
-                if let connectedService = user.$connectedServices.value?.first(where: { connectedService in
-                    connectedService.service.rawValue == serivce.service.rawValue
-                }) {
-                    connectedService.accountName = serivce.accountName
-                    connectedService.token = serivce.token
-                    connectedService.save(on: database).whenComplete({ result in
-                        if case .failure = result {
-                            promise.fail(Abort(.badRequest, reason: "Error with save service"))
-                        } else {
-                            promise.succeed(true)
-                        }
-                        return
-                    })
-                    promise.fail(Abort(.badRequest, reason: "Service already connected"))
-                }
+        
+        getService(serviceId: UUID(service.id), on: database).whenComplete({ result in
+            if case let .success(connectedService) = result {
+                connectedService.accountName = service.accountName
+                connectedService.token = service.token
+                connectedService.save(on: database).whenComplete({ result in
+                    if case .failure = result {
+                        promise.fail(Abort(.badRequest, reason: "Error with save service"))
+                    } else {
+                        promise.succeed(true)
+                    }
+                    return
+                })
+            } else {
+                promise.fail(Abort(.badRequest, reason: "Server error"))
             }
         })
         return promise.futureResult
+    }
+    
+    static func getServices(userId: String, on database: Database, in eventLoop: EventLoop) -> EventLoopFuture<[ConnectedServicesDb]> {
+        
+        let serviceDbQuery = ConnectedServicesDb.query(on: database)
+        return serviceDbQuery.filter(\.$userId, .equal, UUID(userId) ?? UUID()).all()
+    }
+    
+    static func getService(serviceId: UUID?, on database: Database) -> EventLoopFuture<ConnectedServicesDb> {
+        ConnectedServicesDb.find(serviceId, on: database).unwrap(or: Abort(.badRequest))
     }
 }

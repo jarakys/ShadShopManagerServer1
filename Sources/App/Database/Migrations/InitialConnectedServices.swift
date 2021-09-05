@@ -13,6 +13,7 @@ struct InitialConnectedServicesDb: Migration {
         database.schema(ConnectedServicesDb.schema)
             .id()
             .field("token", .string, .required)
+            .field("user_id_field", .uuid, .required)
             .field("account_name", .string, .required)
             .field("service", .array(of: .string))
             .field("user_id", .uuid, .required, .references("users", "id"))
